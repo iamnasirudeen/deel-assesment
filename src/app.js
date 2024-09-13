@@ -227,18 +227,16 @@ app.get("/admin/best-profession", async (req, res) => {
 
   const result = await Job.findAll({
     attributes: [[fn("SUM", col("price")), "totalEarnings"]],
-    include: [
-      {
-        model: Contract,
-        include: [
-          {
-            model: Profile,
-            as: "Contractor",
-            attributes: ["profession"],
-          },
-        ],
-      },
-    ],
+    include: {
+      model: Contract,
+      include: [
+        {
+          model: Profile,
+          as: "Contractor",
+          attributes: ["profession"],
+        },
+      ],
+    },
     where: {
       paymentDate: {
         [Op.between]: [
@@ -261,6 +259,49 @@ app.get("/admin/best-profession", async (req, res) => {
     profession: response["Contract.Contractor.profession"],
     totalEarnings: response.totalEarnings,
   });
+});
+
+app.get("/admin/best-clients", async (req, res) => {
+  const { start, end, limit } = req.query;
+  const { Job, Profile, Contract } = req.app.get("models");
+
+  const result = await Job.findAll({
+    attributes: [
+      [col("Contract.ClientId"), "ClientId"],
+      [fn("SUM", col("price")), "totalPaid"],
+    ],
+    include: {
+      model: Contract,
+      attributes: ["ClientId"],
+      include: [
+        {
+          model: Profile,
+          as: "Client",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
+    },
+    where: {
+      paymentDate: {
+        [Op.between]: [
+          new Date(start).toISOString(),
+          new Date(end).toISOString(),
+        ],
+      },
+      paid: true,
+    },
+    group: ["Contract.ClientId"],
+    order: [[fn("SUM", col("price")), "DESC"]],
+    limit: limit || 2,
+  });
+
+  const clients = result.map((record) => ({
+    id: record.Contract.Client.id,
+    fullName: `${record.Contract.Client.firstName} ${record.Contract.Client.lastName}`,
+    paid: record.get("totalPaid"),
+  }));
+
+  res.status(200).json(clients);
 });
 
 module.exports = app;
