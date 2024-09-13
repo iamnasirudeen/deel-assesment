@@ -219,7 +219,10 @@ app.post("/balances/deposit/:userId", getProfile, async (req, res) => {
 });
 
 app.get("/admin/best-profession", async (req, res) => {
-  console.log("dates", req.query);
+  const { start, end } = req.query;
+  if (!start || !end)
+    return BadRequestExceptionError("Start and End Date has to be passed", res);
+
   const { Job, Profile, Contract } = req.app.get("models");
 
   const result = await Job.findAll({
@@ -239,8 +242,8 @@ app.get("/admin/best-profession", async (req, res) => {
     where: {
       paymentDate: {
         [Op.between]: [
-          new Date(req.query.start).toISOString(),
-          new Date(req.query.end).toISOString(),
+          new Date(start).toISOString(),
+          new Date(end).toISOString(),
         ],
       },
       paid: true,
