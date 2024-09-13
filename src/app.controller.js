@@ -1,4 +1,5 @@
 const { Op, Sequelize, fn, col } = require("sequelize");
+const { sequelize } = require("./model");
 const {
   NotFoundExceptionError,
   BadRequestExceptionError,
