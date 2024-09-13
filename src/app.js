@@ -76,44 +76,36 @@ app.post("/jobs/:job_id/pay", getProfile, async (req, res) => {
   if (jobWithIdExist.paid)
     return BadRequestExceptionError("Job has already been paid for", res);
 
-  try {
-    const transaction = await sequelize.transaction({
-      isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ,
-    });
+  const transaction = await sequelize.transaction({
+    isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ,
+  });
 
+  try {
     const profile = await Profile.findOne({
-      where: { id: req.profile.id },
+      where: {
+        id: req.profile.id,
+        balance: { [Op.gte]: jobWithIdExist.price },
+      },
       lock: true,
       transaction,
     });
 
     /**
-     *
-     * I can decide to manually check balance here since user profile has been locked (the code below)
-     * or use atomic updates, I choose to use atomic updates instead
-     *
-     *  if (profile.balance < req.body.price)
-     *  throw new Error("Insufficient balance");
+     * the reason for throwing insufficient funds is due to the fact user actually does
+     * exist, if not, it wont have passed the getProfile middleware but the database
+     * wasnt able to find a user (the auth user) with sufficient balance to pay for the user
      */
+    if (!profile) throw new Error("Insufficient funds");
 
-    // Atomic update for
-    const job = await Job.update(
+    await Job.update(
       { paid: true, paymentDate: new Date().toISOString() },
       {
         where: {
           id: jobWithIdExist.id,
-          price: {
-            [Op.gte]: profile.balance,
-          },
         },
         transaction,
       }
     );
-    if (!job[0])
-      return NotFoundExceptionError(
-        "Job not found or insufficient balance",
-        res
-      );
 
     // debit the client
     await Profile.decrement("balance", {
@@ -128,7 +120,7 @@ app.post("/jobs/:job_id/pay", getProfile, async (req, res) => {
     await Profile.increment("balance", {
       by: jobWithIdExist.price,
       where: {
-        id: jobWithIdExist["Contract"].ContractorId,
+        id: jobWithIdExist["Contract.ContractorId"],
       },
       transaction,
     });
@@ -154,7 +146,7 @@ app.post("/jobs/:job_id/pay", getProfile, async (req, res) => {
  */
 app.post("/balances/deposit/:userId", getProfile, async (req, res) => {
   const userId = parseInt(req.params.userId || 0);
-  const amount = parseInt(req.body.amount || 0);
+  const amount = parseFloat(req.body.amount || 0); // 231.11 is a float which is an example of a walletBalance so I assume user can have added cents on their money when funding
   if (userId !== req.profile.id)
     return BadRequestExceptionError(
       "UserId doesnt match the authenticated id",

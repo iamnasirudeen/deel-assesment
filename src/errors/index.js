@@ -7,7 +7,7 @@ const NotAuthorizedExceptionError = (message, res) => {
 };
 
 const NotFoundExceptionError = (message, res) => {
-  return res.status(404).send({ message, status: 401, success: false });
+  return res.status(404).send({ message, status: 404, success: false });
 };
 
 module.exports = {
