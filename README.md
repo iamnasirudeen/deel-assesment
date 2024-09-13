@@ -96,3 +96,14 @@ It would be great for example if you'd write some unit test / simple frontend de
 When you have finished the assignment, zip your repo (make sure to include .git folder) and send us the zip.
 
 Thank you and good luck! 🙏
+
+## Improvements that can be made
+
+1. **Casing Consistency**:  
+   There is inconsistent casing across the codebase. Some parts of the schema use PascalCase while the majority use camelCase. Consistency in naming conventions is crucial for code readability and maintainability. Adopting a uniform casing style throughout the codebase would improve clarity and reduce potential confusion.
+
+2. **TypeScript Adoption**:  
+   The use of a typed language like TypeScript can significantly increase developer productivity by providing type safety and better tooling support. It also facilitates collaboration within teams by providing clearer contracts and reducing runtime errors. Migrating the codebase to TypeScript would enhance the overall development experience.
+
+3. **Use of Transactions in Database seeder and use of bulk writes inside of duplicate Model.create**:  
+   Wrap the seeding process in a transaction to ensure that either all data is inserted successfully or none at all. This can prevent partial data insertion in case of an error.
