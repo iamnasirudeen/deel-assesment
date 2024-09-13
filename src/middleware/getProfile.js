@@ -5,7 +5,7 @@ const getProfile = async (req, res, next) => {
   const { Profile } = req.app.get("models");
   const profile = await Profile.findOne({
     where: { id: profile_id.trim() || 0 },
-    raw: true, // get only the need object
+    raw: true,
   });
 
   if (!profile)
