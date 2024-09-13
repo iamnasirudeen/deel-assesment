@@ -12,19 +12,19 @@ app.use(bodyParser.json());
 app.set("sequelize", sequelize);
 app.set("models", sequelize.models);
 
+app.get("/contracts", getProfile, async (req, res) => {
+  const { Contract } = req.app.get("models");
+  const contracts = await Contract.findAll({
+    where: { ContractorId: req.profile.id, status: { [Op.ne]: "terminated" } },
+  });
+
+  res.send(contracts);
+});
+
 /**
  * FIXED
  * @returns contract by id
  */
-
-app.get("/contracts", getProfile, async (req, res) => {
-  const { Contract } = req.app.get("models");
-  const contracts = await Contract.findAll({
-    where: { ContractorId: req.profile.id },
-  });
-
-  res.json(contracts); // look into pagination
-});
 
 app.get("/contracts/:id", getProfile, async (req, res) => {
   const { Contract } = req.app.get("models");
@@ -51,7 +51,7 @@ app.get("/jobs/unpaid", getProfile, async (req, res) => {
       },
     },
   });
-  res.json(unpaidJobs);
+  res.send(unpaidJobs);
 });
 
 app.post("/jobs/:job_id/pay", getProfile, async (req, res) => {
@@ -126,7 +126,7 @@ app.post("/jobs/:job_id/pay", getProfile, async (req, res) => {
     });
 
     await transaction.commit();
-    res.status(200).json({ status: 200, message: "Job paid for successfully" });
+    res.status(200).send({ status: 200, message: "Job paid for successfully" });
   } catch (error) {
     await transaction.rollback();
     res.status(400).send(error.message);
@@ -293,7 +293,7 @@ app.get("/admin/best-clients", async (req, res) => {
     paid: record.get("totalPaid"),
   }));
 
-  res.status(200).json(clients);
+  res.status(200).send(clients);
 });
 
 module.exports = app;
